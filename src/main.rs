@@ -4,6 +4,7 @@ enum Command {
     Add(String),
     Exit,
     List,
+    Help,
 }
 
 impl TryFrom<String> for Command {
@@ -19,10 +20,19 @@ impl TryFrom<String> for Command {
             Ok(Command::Exit)
         } else if linput.starts_with("list") {
             Ok(Command::List)
+        } else if linput.starts_with("help") {
+            Ok(Command::Help)
         } else {
             Err("Failed to detect known command")
         }
     }
+}
+
+fn print_help() {
+    println!("{}\t{}", "add", "adds a task");
+    println!("{}\t{}", "help", "prints this message");
+    println!("{}\t{}", "done", "ends the main loop");
+    println!("{}\t{}", "list", "lists the known tasks");
 }
 
 fn print_tasks(tasks: &[String]) {
@@ -60,6 +70,7 @@ fn main() {
                 Command::Add(task) => tasks.push(task),
                 Command::Exit => break,
                 Command::List => print_tasks(&tasks),
+                Command::Help => print_help(),
             },
             Err(msg) => println!("{}", msg),
         }
