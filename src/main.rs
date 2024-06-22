@@ -1,10 +1,19 @@
 use std::io::{self, Write};
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
 
+#[derive(Debug, EnumIter)]
 enum Command {
     Add(String),
     Exit,
     List,
     Help,
+}
+
+impl ToString for Command {
+    fn to_string(&self) -> String {
+        String::new()
+    }
 }
 
 impl TryFrom<String> for Command {
@@ -29,10 +38,15 @@ impl TryFrom<String> for Command {
 }
 
 fn print_help() {
-    println!("{}\t{}", "add", "adds a task");
-    println!("{}\t{}", "help", "prints this message");
-    println!("{}\t{}", "done", "ends the main loop");
-    println!("{}\t{}", "list", "lists the known tasks");
+    //cmd: &Command) {
+    for cmd in Command::iter() {
+        match cmd {
+            Command::Add(_) => println!("add\tadds a task"),
+            Command::Help => println!("help\tprints this message"),
+            Command::Exit => println!("done\tends the main loop"),
+            Command::List => println!("list\tlists the known tasks"),
+        }
+    }
 }
 
 fn print_tasks(tasks: &[String]) {
