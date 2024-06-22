@@ -1,4 +1,29 @@
-use std::io;
+use std::io::{self, Write};
+
+enum Command {
+    Add(String),
+    Exit,
+    List,
+}
+
+impl TryFrom<String> for Command {
+    type Error = &'static str;
+
+    fn try_from(input: String) -> Result<Self, Self::Error> {
+        let linput = input.to_lowercase();
+
+        if linput.starts_with("add") {
+            let task = input[3..].trim();
+            Ok(Command::Add(task.to_string()))
+        } else if linput.starts_with("done") {
+            Ok(Command::Exit)
+        } else if linput.starts_with("list") {
+            Ok(Command::List)
+        } else {
+            Err("Failed to detect known command")
+        }
+    }
+}
 
 fn print_tasks(tasks: &[String]) {
     for (i, task) in tasks.iter().enumerate() {
@@ -22,14 +47,26 @@ fn main() {
     loop {
         let mut input = String::new();
         print!("> ");
+        io::stdout().flush().unwrap();
+
         let _n = io::stdin().read_line(&mut input).unwrap();
         //println!("read {} bytes", n);
         strip(&mut input);
         //println!("read|{}|", input);
-        if input.to_ascii_lowercase().starts_with("done") {
-            break;
+
+        let parsed_cmd = Command::try_from(input);
+        match parsed_cmd {
+            Ok(cmd) => match cmd {
+                Command::Add(task) => tasks.push(task),
+                Command::Exit => break,
+                Command::List => print_tasks(&tasks),
+            },
+            Err(msg) => println!("{}", msg),
         }
-        tasks.push(input);
+        //if input.to_ascii_lowercase().starts_with("done") {
+        //    break;
+        //}
+        //tasks.push(input);
     }
 
     print_tasks(&tasks);
