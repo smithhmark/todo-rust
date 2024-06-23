@@ -65,7 +65,9 @@ fn print_help() {
     }
 }
 
-fn add_task(tasks: &mut HashMap<usize, Task>, desc: String) {
+type TaskMap = HashMap<usize, Task>;
+
+fn add_task(tasks: &mut TaskMap, desc: String) {
     let task = Task {
         desc,
         start: Utc::now(),
@@ -76,14 +78,14 @@ fn add_task(tasks: &mut HashMap<usize, Task>, desc: String) {
     tasks.insert(task_id, task);
 }
 
-fn complete_task(tasks: &mut HashMap<usize, Task>, task_id: usize) {
+fn complete_task(tasks: &mut TaskMap, task_id: usize) {
     if let Some(task) = tasks.get_mut(&task_id) {
         task.end = Some(Utc::now());
     }
 }
 
-fn task_report(tasks: &HashMap<usize, Task>) {
-    println!("task_id\tduration\t\ttask description");
+fn task_report(tasks: &TaskMap) {
+    println!("task_id\tduration\ttask description");
     for (tid, task) in tasks.iter() {
         if let Some(end_time) = task.end {
             let dur = end_time - task.start;
@@ -98,7 +100,7 @@ fn task_report(tasks: &HashMap<usize, Task>) {
     }
 }
 
-fn print_tasks(tasks: &HashMap<usize, Task>) {
+fn print_tasks(tasks: &TaskMap) {
     for (tid, task) in tasks.iter() {
         if task.end.is_none() {
             println!("{}\t{}", tid, task.desc);
@@ -117,7 +119,7 @@ fn strip(s: &mut String) {
 
 fn main() {
     println!("Hello, world!");
-    let mut tasks: HashMap<usize, Task> = HashMap::new();
+    let mut tasks: TaskMap = HashMap::new();
 
     loop {
         let mut input = String::new();
