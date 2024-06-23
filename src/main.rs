@@ -12,6 +12,7 @@ enum Command {
     List,
     Complete(usize),
     Help,
+    Report,
 }
 
 #[derive(Debug, Hash)]
@@ -43,6 +44,8 @@ impl TryFrom<String> for Command {
             Ok(Command::List)
         } else if linput.starts_with("help") {
             Ok(Command::Help)
+        } else if linput.starts_with("report") {
+            Ok(Command::Report)
         } else {
             Err("Failed to detect known command")
         }
@@ -57,6 +60,7 @@ fn print_help() {
             Command::Help => println!("help\tprints this message"),
             Command::Exit => println!("done\tends the main loop"),
             Command::List => println!("list\tlists the known tasks"),
+            Command::Report => println!("report\tprints a report of tasks and their durations"),
         }
     }
 }
@@ -76,10 +80,22 @@ fn complete_task(tasks: &mut HashMap<usize, Task>, task_id: usize) {
     if let Some(task) = tasks.get_mut(&task_id) {
         task.end = Some(Utc::now());
     }
-    //match tasks.get_mut(&task_id) {
-    //Some(task) => task.end = Some(Utc::now()),
-    //None => (),
-    //}
+}
+
+fn task_report(tasks: &HashMap<usize, Task>) {
+    println!("task_id\tduration\t\ttask description");
+    for (tid, task) in tasks.iter() {
+        if let Some(end_time) = task.end {
+            let dur = end_time - task.start;
+            let seconds = dur.num_seconds();
+            let minutes = dur.num_minutes();
+            let hours = dur.num_hours();
+            let time_str = format!("{:0>2}:{:0>2}:{:0>2}", hours, minutes, seconds);
+            println!("{}\t{}\t{}", tid, time_str, task.desc);
+        } else {
+            println!("{}\tpending\t\t{}", tid, task.desc);
+        }
+    }
 }
 
 fn print_tasks(tasks: &HashMap<usize, Task>) {
@@ -121,6 +137,7 @@ fn main() {
                 Command::Exit => break,
                 Command::List => print_tasks(&tasks),
                 Command::Help => print_help(),
+                Command::Report => task_report(&tasks),
             },
             Err(msg) => println!("{}", msg),
         }
