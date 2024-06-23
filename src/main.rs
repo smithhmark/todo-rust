@@ -1,3 +1,6 @@
+use chrono::prelude::*;
+use std::collections::HashMap;
+
 use std::io::{self, Write};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
@@ -7,13 +10,15 @@ enum Command {
     Add(String),
     Exit,
     List,
+    Complete(usize),
     Help,
 }
 
-impl ToString for Command {
-    fn to_string(&self) -> String {
-        String::new()
-    }
+#[derive(Debug, Hash)]
+struct Task {
+    desc: String,
+    start: DateTime<Utc>,
+    end: Option<DateTime<Utc>>,
 }
 
 impl TryFrom<String> for Command {
@@ -25,6 +30,13 @@ impl TryFrom<String> for Command {
         if linput.starts_with("add") {
             let task = input[3..].trim();
             Ok(Command::Add(task.to_string()))
+        } else if linput.starts_with("fin") {
+            let task = input[3..].trim().to_string();
+            let task_id = match task.parse::<usize>() {
+                Ok(i) => i,
+                Err(_) => return Err("format error for task_id"),
+            };
+            Ok(Command::Complete(task_id))
         } else if linput.starts_with("done") {
             Ok(Command::Exit)
         } else if linput.starts_with("list") {
@@ -38,10 +50,10 @@ impl TryFrom<String> for Command {
 }
 
 fn print_help() {
-    //cmd: &Command) {
     for cmd in Command::iter() {
         match cmd {
             Command::Add(_) => println!("add\tadds a task"),
+            Command::Complete(_) => println!("fin\tmarks a task as complete"),
             Command::Help => println!("help\tprints this message"),
             Command::Exit => println!("done\tends the main loop"),
             Command::List => println!("list\tlists the known tasks"),
@@ -49,9 +61,32 @@ fn print_help() {
     }
 }
 
-fn print_tasks(tasks: &[String]) {
-    for (i, task) in tasks.iter().enumerate() {
-        println!("{}\t{}", i, task);
+fn add_task(tasks: &mut HashMap<usize, Task>, desc: String) {
+    let task = Task {
+        desc,
+        start: Utc::now(),
+        end: None,
+    };
+    let task_id = tasks.len();
+
+    tasks.insert(task_id, task);
+}
+
+fn complete_task(tasks: &mut HashMap<usize, Task>, task_id: usize) {
+    if let Some(task) = tasks.get_mut(&task_id) {
+        task.end = Some(Utc::now());
+    }
+    //match tasks.get_mut(&task_id) {
+    //Some(task) => task.end = Some(Utc::now()),
+    //None => (),
+    //}
+}
+
+fn print_tasks(tasks: &HashMap<usize, Task>) {
+    for (tid, task) in tasks.iter() {
+        if task.end.is_none() {
+            println!("{}\t{}", tid, task.desc);
+        }
     }
 }
 
@@ -66,7 +101,7 @@ fn strip(s: &mut String) {
 
 fn main() {
     println!("Hello, world!");
-    let mut tasks: Vec<String> = Vec::new();
+    let mut tasks: HashMap<usize, Task> = HashMap::new();
 
     loop {
         let mut input = String::new();
@@ -81,17 +116,14 @@ fn main() {
         let parsed_cmd = Command::try_from(input);
         match parsed_cmd {
             Ok(cmd) => match cmd {
-                Command::Add(task) => tasks.push(task),
+                Command::Add(task) => add_task(&mut tasks, task),
+                Command::Complete(task) => complete_task(&mut tasks, task),
                 Command::Exit => break,
                 Command::List => print_tasks(&tasks),
                 Command::Help => print_help(),
             },
             Err(msg) => println!("{}", msg),
         }
-        //if input.to_ascii_lowercase().starts_with("done") {
-        //    break;
-        //}
-        //tasks.push(input);
     }
 
     print_tasks(&tasks);
